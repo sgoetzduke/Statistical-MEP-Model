@@ -1,4 +1,4 @@
-function response = virtstimulate(amplitude_SI, subject_parameters)
+function response = virtstimulate(amplitude_SI, subject_parameters, noisefree)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   virtstimulate(amplitude_SI, subject_parameters)
@@ -9,14 +9,20 @@ function response = virtstimulate(amplitude_SI, subject_parameters)
 %
 %   amplitude_SI:	amplitude value, typically between 0 and 1
 %   subject_parameters:	subject, represented by its parameters
+%   noisefree:      logical, if true, result contains neither x nor additive or mult. y noise
 %
 %   (c) 2017, stefan.goetz@duke.edu, 
 %   2021, update by boshuo.wang@duke.edu
 
 amplitude = amplitude_SI * 100;    % convert from [0, 1] to [0%, 100%]
 
-rand_num_x = subject_parameters(7) * randn(size(amplitude_SI));
-rand_num_y = subject_parameters(6) * randn(size(amplitude_SI));
+if noisefree
+    rand_num_x = 0;
+    rand_num_y = 0;
+else
+    rand_num_x = subject_parameters(7) * randn(size(amplitude_SI));
+    rand_num_y = subject_parameters(6) * randn(size(amplitude_SI));
+end
 
 rand_num_floor = 1e-8;  % 10 nV
 
@@ -27,7 +33,7 @@ add_y_var = randgev(size(amplitude_SI), subject_parameters(9), 10.^subject_param
 %                   x,                  k,                     mu,                        sigma
 
 response = max(rand_num_floor, real( add_y_var + ...
-                 1e-7 * exp( log(10) * ( rand_num_y + (subject_parameters(2)) ./ ...    
+                1e-7 * exp( log(10) * ( rand_num_y + (subject_parameters(2)) ./ ...   
                              ( 1 + subject_parameters(3) ./ ( x_corrected.^subject_parameters(4) ) ) ) ) ) );
 % First -7 in original code moved out of exp as 1e-7. Second -7 included in
 % subject_parameters(2).
