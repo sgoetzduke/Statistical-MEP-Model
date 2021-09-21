@@ -1,37 +1,34 @@
-function myresponse = virtstimulate(amplitudeSI, ActSubjectParameters)
+function response = virtstimulate(amplitude_SI, subject_parameters)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%   virtstimulate(amplitudeSI, ActSubjectParameters)
-%   stimulates a subject with parameters ActSubjectParameters,
+%   virtstimulate(amplitude_SI, subject_parameters)
+%   Stimulates a subject with parameters subject_parameters,
 %   e.g., generated with virtualsubjectEIVGenerateSubject,
-%   with amplitude(s) amplitudeSI. The return value is a
+%   with amplitude(s) amplitude_SI. The return value is a
 %   peak-to-peak amplitude value in Volts.
 %
+%   amplitude_SI:	amplitude value, typically between 0 and 1
+%   subject_parameters:	subject, represented by its parameters
 %
-%   amplitudeSI:           amplitude value,
-%                          typically between 0 and 1
-%   ActSubjectParameters:  subject, represented by its
-%                          parameters   
-%
-%   (c) 2017, stefan.goetz@duke.edu
+%   (c) 2017, stefan.goetz@duke.edu, 
+%   2021, update by boshuo.wang@duke.edu
 
+amplitude = amplitude_SI * 100;    % convert from [0, 1] to [0%, 100%]
 
+rand_num_x = subject_parameters(7) * randn(size(amplitude_SI));
+rand_num_y = subject_parameters(6) * randn(size(amplitude_SI));
 
-	myamplitude = amplitudeSI * 100;
+rand_num_floor = 1e-8;  % 10 nV
 
-	RandNumx = ActSubjectParameters(7) *randn(size(amplitudeSI));
-	RandNumy = ActSubjectParameters(6) *randn(size(amplitudeSI));
-	RandNumFloor = 0;
+% Only positive x values (despite p5 and x noise):
+x_corrected = max( (amplitude - subject_parameters(5) + rand_num_x), eps);
 
+add_y_var = randgev(size(amplitude_SI), subject_parameters(9), 10.^subject_parameters(1), subject_parameters(8));
+%                   x,                  k,                     mu,                        sigma
 
-
-
-
-        %% only positive x values (despite p5 and x noise):
-	CorrectedxArgument = eps + (myamplitude - ActSubjectParameters(5) + RandNumx) .*(myamplitude - ActSubjectParameters(5) + RandNumx > 0);
-	add_yvar = rand_gev(size(amplitudeSI), ActSubjectParameters(9), 10.^ActSubjectParameters(1), ActSubjectParameters(8));
-	fullresponse = RandNumFloor + add_yvar + exp( log(10)* (RandNumy + -7 + (ActSubjectParameters(2) - (-7)) ./(1 + ActSubjectParameters(3)./(CorrectedxArgument).^ActSubjectParameters(4))) );
-	myresponse = real( fullresponse );    
-  
-        
+response = max(rand_num_floor, real( add_y_var + ...
+                 1e-7 * exp( log(10) * ( rand_num_y + (subject_parameters(2)) ./ ...    
+                             ( 1 + subject_parameters(3) ./ ( x_corrected.^subject_parameters(4) ) ) ) ) ) );
+% First -7 in original code moved out of exp as 1e-7. Second -7 included in
+% subject_parameters(2).
 end

@@ -17,11 +17,6 @@ The model shows MEP features that were previously described in the literature an
 
 
 
-
-
-
-
-
 ## Files
 virtstimulate(myamplitudeSI, ActSubjectParameters)
 
